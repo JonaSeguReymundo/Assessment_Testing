@@ -3,7 +3,6 @@ const { test, expect } = require('@playwright/test');
 test.describe('Flujo de navegación principal - Plataforma Altempo', () => {
 
   test('Acceso restringido sin sesión', async ({ page }) => {
-    // Intentar acceder directo al dashboard sin login
     await page.goto('https://altempo.dev/talent-hunter');
 
     // Debe redirigir al login
@@ -16,7 +15,7 @@ test.describe('Flujo de navegación principal - Plataforma Altempo', () => {
   test('Navegación correcta con sesión activa', async ({ page }) => {
 
     // =========================
-    // LOGIN
+    // STEP 1: LOGIN
     // =========================
     await page.goto('https://altempo.dev/signin');
 
@@ -24,33 +23,32 @@ test.describe('Flujo de navegación principal - Plataforma Altempo', () => {
     await page.locator('input[type="password"]').fill('2004Jh$r2004');
     await page.getByRole('button', { name: /log in/i }).click();
 
-    // Validar login real
     await expect(page).toHaveURL(/talent-hunter/i);
     await expect(
       page.getByRole('heading', { name: /bienvenid/i })
     ).toBeVisible();
 
     // =========================
-    // ACCESO A SECCIONES CLAVE
+    // STEP 2: PRINCIPAL NAVIGATION
     // =========================
 
     // Dashboard
     await expect(page.locator('aside')).toBeVisible();
 
-    // Perfil
+    // Profile
     await page.getByRole('link', { name: /my profile/i }).click();
     await expect(page).toHaveURL(/profile/i);
 
-    // Música / Servicios
+    // Musics / services
     await page.getByRole('link', { name: /musics/i }).click();
     await expect(page).toHaveURL(/musics/i);
 
-    // Eventos
+    // Events
     await page.getByRole('link', { name: /events/i }).click();
     await expect(page).toHaveURL(/events/i);
 
     // =========================
-    // VALIDAR QUE NO SE PIERDE SESIÓN
+    // PERSISTENCE AFTER RELOAD
     // =========================
     await page.reload();
     await expect(page).not.toHaveURL(/signin/i);
