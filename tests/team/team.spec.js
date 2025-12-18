@@ -1,120 +1,61 @@
 const { test, expect } = require('@playwright/test');
 
-test.describe('Gestión y edición de equipo de trabajo / banda - Plataforma Altempo', () => {
-
-  test('Visualización del flujo de gestión de banda hasta la visualización del concepto', async ({ page }) => {
-
-    // =========================
-    // 1. LOGIN (Mantenido)
-    // =========================
+test.describe('Gestión y edición de equipo de trabajo / banda', () => {
+  test.beforeEach(async ({ page }) => {
+    // 1. Login
+    // NOTE: Hardcoded credentials are used here for demonstration purposes.
+    // In a real-world scenario, these should be loaded from a secure source.
     await page.goto('https://altempo.dev/signin');
+    await page.getByLabel(/email/i).fill('2346jona');
+    await page.getByLabel(/password/i).fill('2004Jh$r2004');
+    await page.locator('button[type="submit"]').click();
 
-    await page.locator('input').first().fill('2346jona');
-    await page.locator('input[type="password"]').fill('2004Jh$r2004');
-    await page.getByRole('button', { name: /log in/i }).click();
+    // Wait for navigation to the dashboard
+    await expect(page).toHaveURL(/talent-hunter/i, { timeout: 10000 });
 
-    await expect(page).toHaveURL(/talent-hunter/i);
-    await expect(
-      page.getByRole('heading', { name: /bienvenid/i })
-    ).toBeVisible();
-
-    // =========================
-    // 2. NAVEGACIÓN DESDE EL DASHBOARD
-    // =========================
-    
-    const bandSectionHeader = page.getByRole('heading', {
-      name: /personalización en composición para tu banda/i
-    });
-    await bandSectionHeader.scrollIntoViewIfNeeded();
-    
-    const bandCard = page.getByText(/orquesta tropical/i).first();
-    await expect(bandCard).toBeVisible();
-    await bandCard.click();
-
-    // =========================
-    // 3. PASO 1: ESTRUCTURA DE LA BANDA
-    // =========================
-    
-    await expect(page).toHaveURL(/signup-client/i);
-    await expect(page.getByText('1 de 2')).toBeVisible();
-    
-    const nextButton = page.getByRole('button', { name: /siguiente/i });
-    await expect(nextButton).toBeVisible();
-    await nextButton.click();
-
-    // =========================
-    // 4. PASO 2: LUGAR Y LOGÍSTICA (CAMPOS OBLIGATORIOS)
-    // =========================
-
-    await expect(page.getByText('2 de 2')).toBeVisible();
-    
-    // 4.1 Modalidad (Presencial es usualmente requerida para mostrar mapa)
-    await page.getByRole('button', { name: /presencial/i }).click();
-
-    // 4.2 Ubicación y Ciudad
-    const cityInput = page.locator('#event_city');
-    await expect(cityInput).toBeVisible();
-    await cityInput.fill('Bogotá');
-    await page.keyboard.press('ArrowDown');
-    await page.keyboard.press('Enter');
-
-    const addressInput = page.locator('#event_address');
-    await expect(addressInput).toBeVisible();
-    await addressInput.fill('Calle Ficticia 123, Barrio Central');
-    
-    // 4.3 Tipo de espacio
-    await page.getByRole('button', { name: /espacio cerrado/i }).click();
-
-    // 4.4 Equipo de sonido y montaje
-    await page.getByRole('button', { name: /tenemos equipo propio/i }).click();
-
-    // 4.5 Aforo estimado
-    await page.getByRole('button', { name: /entre 50 y 100/i }).click();
-
-    // 4.6 Fechas obligatorias (Visita y Evento)
-    // Interactuamos con los contenedores de fecha
-    await page.getByText(/fecha de la visita/i).click();
-    await page.keyboard.type('18122025');
-    await page.keyboard.press('Enter');
-
-    await page.getByText(/fecha del evento/i).click();
-    await page.keyboard.type('20122025');
-    await page.keyboard.press('Enter');
-
-    // 4.7 Duración del evento
-    await page.getByRole('button', { name: /3 - 4 horas/i }).click();
-
-    // 4.8 Fuente de información (¿Cómo te enteraste?)
-    await page.getByLabel(/redes sociales/i).check();
-
-    // Esperar a que el Mapa cargue correctamente
-    await expect(page.locator('.gm-style')).toBeVisible();
-
-    // Acción: Finalizar el proceso (El botón ya no debería estar disabled)
-    const searchProsButton = page.getByRole('button', { name: /buscar profesionales/i });
-    await expect(searchProsButton).toBeEnabled();
-    await searchProsButton.click();
-
-    // =========================
-    // 5. CONFIRMACIÓN DE ÉXITO
-    // =========================
-
-    await expect(page.getByText(/order created successfully/i)).toBeVisible({ timeout: 15000 });
-    await expect(page.getByText(/orden id: #ord-/i)).toBeVisible();
-
-    const viewConceptButton = page.getByRole('button', { name: /ver concepto/i });
-    await expect(viewConceptButton).toBeVisible();
-    await viewConceptButton.click();
-
-    // =========================
-    // 6. VISTA FINAL DE LA ORDEN
-    // =========================
-
-    await expect(page).toHaveURL(/.*\/order\?id=ORD-.*/);
-    const toaster = page.locator('div[data-rht-toaster]');
-    await expect(toaster).toBeAttached();
-
-    console.log('Flujo completado exitosamente con todos los requerimientos técnicos.');
+    // 2. Navigate to the team section
+    await page.goto('https://altempo.dev/talent-hunter/team');
   });
 
+  test('Creación de equipo o banda', async ({ page }) => {
+    // 3. Click the "Crear equipo" button
+    await page.getByRole('button', { name: /crear equipo/i }).click();
+
+    // 4. Fill out the team creation form
+    await page.getByLabel(/nombre de la banda/i).fill('Mi Banda de Prueba');
+    await page.getByLabel(/género musical/i).fill('Rock');
+    await page.getByLabel(/descripción/i).fill('Una banda de rock de prueba.');
+    await page.getByRole('button', { name: /guardar/i }).click();
+
+    // 5. Verify that the team was created successfully
+    await expect(page.getByText(/banda creada con éxito/i)).toBeVisible();
+    await expect(page.getByText(/mi banda de prueba/i)).toBeVisible();
+  });
+
+  test('Edición de información del equipo', async ({ page }) => {
+    // 3. Click the "Editar" button for the team
+    await page.getByRole('button', { name: /editar/i }).first().click();
+
+    // 4. Edit the team information
+    await page.getByLabel(/nombre de la banda/i).fill('Mi Banda de Prueba Editada');
+    await page.getByRole('button', { name: /guardar/i }).click();
+
+    // 5. Verify that the team was edited successfully
+    await expect(page.getByText(/banda actualizada con éxito/i)).toBeVisible();
+    await expect(page.getByText(/mi banda de prueba editada/i)).toBeVisible();
+  });
+
+  test('Invitación de miembros', async ({ page }) => {
+    // 3. Click the "Invitar" button for the team
+    await page.getByRole('button', { name: /invitar/i }).first().click();
+
+    // 4. Fill out the invitation form
+    await page.getByLabel(/email del miembro/i).fill('miembro@email.com');
+    await page.getByRole('button', { name: /enviar invitación/i }).click();
+
+    // 5. Verify that the invitation was sent successfully
+    await expect(page.getByText(/invitación enviada/i)).toBeVisible();
+    await expect(page.getByText(/miembro@email.com/i)).toBeVisible();
+    await expect(page.getByText(/pendiente/i)).toBeVisible();
+  });
 });

@@ -7,10 +7,12 @@ test.describe('Profile - Plataforma Altempo', () => {
     // =========================
     // STEP 1: LOGIN
     // =========================
+    // NOTE: Hardcoded credentials are used here for demonstration purposes.
+    // In a real-world scenario, these should be loaded from a secure source.
     await page.goto('https://altempo.dev/signin');
 
-    await page.locator('input').first().fill('2346jona');
-    await page.locator('input[type="password"]').fill('2004Jh$r2004');
+    await page.getByLabel(/email/i).fill('2346jona');
+    await page.getByLabel(/password/i).fill('2004Jh$r2004');
 
     await page.locator('button[type="submit"]').click();
 
